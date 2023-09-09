@@ -1,8 +1,8 @@
 import * as azdata from 'azdata';
 
 export class ColumnFetcher {
-    private context : azdata.ObjectExplorerContext;
-    private connectionUri: string;
+    private readonly context : azdata.ObjectExplorerContext;
+    private readonly connectionUri: string;
 
     constructor(context : azdata.ObjectExplorerContext, connectionUri: string) {
         this.context = context;

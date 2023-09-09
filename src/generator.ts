@@ -1,16 +1,18 @@
 import * as azdata from 'azdata';
 import { Column } from './columnFetcher';
+import { Configuration } from './configuration';
 
 export class Generator {
-    private context : azdata.ObjectExplorerContext;
-    private connectionUri: string;
-    private columns : Column[];
-    private escapedTableName: string;
+    private readonly context : azdata.ObjectExplorerContext;
+    private readonly connectionUri: string;
+    private readonly configuration: Configuration;
+    private readonly columns: Column[];
+    private readonly escapedTableName: string;
 
-    private tab = '    ';
-    private newline = '\n';
+    private readonly indent;
+    private readonly newline = '\n';
 
-    private numericTypes = [
+    private static readonly numericTypes = [
         'int',
         'bit',
         'decimal',
@@ -21,7 +23,7 @@ export class Generator {
         'geography'
     ];
 
-    private scriptCompatibilityOptionMap = new Map<number, string>([
+    private static readonly scriptCompatibilityOptionMap = new Map<number, string>([
         [90, 'Script90Compat'],
         [100, 'Script100Compat'],
         [105, 'Script105Compat'],
@@ -31,7 +33,7 @@ export class Generator {
         [140, 'Script140Compat']
     ]);
 
-    private targetDatabaseEngineEditionMap = new Map<number, string>([
+    private static readonly targetDatabaseEngineEditionMap = new Map<number, string>([
         [0, 'SqlServerEnterpriseEdition'],
         [1, 'SqlServerPersonalEdition'],
         [2, 'SqlServerStandardEdition'],
@@ -46,18 +48,21 @@ export class Generator {
     constructor(
         context : azdata.ObjectExplorerContext, 
         connectionUri: string, 
+        configuration: Configuration,
         columns : Column[]
     ) {
         this.context = context;
         this.connectionUri = connectionUri;
         this.columns = columns;
+        this.configuration = configuration;
+        this.indent = this.configuration.indent;
         this.escapedTableName = `[${this.context.nodeInfo!.metadata!.schema!}].[${this.context.nodeInfo!.metadata!.name}]`;
     }
 
     public async generateScripts() : Promise<GeneratedScripts> {
         const seedScriptHelperBuilder = [
             'SELECT TOP 1000 REPLACE(',
-            `${this.tab}'('`
+            `${this.indent}'('`
         ];
 
         let insertQueryBuilder = [
@@ -75,8 +80,8 @@ export class Generator {
 
             const isLastColumn = index === lastIndex;
 
-            insertQueryBuilder.push(`${this.tab}${column.metadata.escapedName}${isLastColumn ? '' : ','}`);
-            seedScriptHelperBuilder.push(`${this.tab}+ ${this.buildColumnLine(column, isLastColumn)}`);
+            insertQueryBuilder.push(`${this.indent}${column.metadata.escapedName}${isLastColumn ? '' : ','}`);
+            seedScriptHelperBuilder.push(`${this.indent}+ ${this.buildColumnLine(column, isLastColumn)}`);
         });
 
         insertQueryBuilder.push(
@@ -93,7 +98,7 @@ export class Generator {
         }
 
         seedScriptHelperBuilder.push(
-            `${this.tab}+ '), '`,
+            `${this.indent}+ '), '`,
             ", '''NULL'''",
             ", 'NULL')",
             `FROM ${this.escapedTableName};`
@@ -116,10 +121,13 @@ export class Generator {
     }
 
     private buildColumnLine(column : Column, isLastColumn : boolean) : string {
-        const prefix = `'/* ${column.metadata.escapedName} */ '`;
+        const columnLabel = this.configuration.enableColumnLabels
+            ? `'/* ${column.metadata.escapedName} */ ' + `
+            : '';
+        
         let isNullArguments = '';
         
-        if (this.includesDataType(column.unsanitizedAttributes, this.numericTypes)) {
+        if (this.includesDataType(column.unsanitizedAttributes, Generator.numericTypes)) {
             isNullArguments = `CONVERT(VARCHAR, ${column.metadata.escapedName}), 'NULL'`;
         } else if (this.includesDataType(column.unsanitizedAttributes, ["date"])) {
             isNullArguments = `'''' + CONVERT(VARCHAR, ${column.metadata.escapedName}) + '''', 'NULL'`;
@@ -127,7 +135,7 @@ export class Generator {
             isNullArguments = `'''' + CONVERT(VARCHAR(MAX), REPLACE(${column.metadata.escapedName}, '''', '''''')) + '''', 'NULL'`;
         }  
 
-        return `${prefix} + ISNULL(${isNullArguments})${isLastColumn ? '' : " + ', '"}`;
+        return `${columnLabel}ISNULL(${isNullArguments})${isLastColumn ? '' : " + ', '"}`;
     }
 
     private async isIdentityByScanningCreateTableScript() {
@@ -139,8 +147,8 @@ export class Generator {
             azdata.ScriptOperation.Create, 
             this.context.nodeInfo!.metadata!,
             {
-                scriptCompatibilityOption: this.scriptCompatibilityOptionMap.get(serverInfo.serverMajorVersion!)!,
-                targetDatabaseEngineEdition: this.targetDatabaseEngineEditionMap.get(serverInfo.engineEditionId!)!,
+                scriptCompatibilityOption: Generator.scriptCompatibilityOptionMap.get(serverInfo.serverMajorVersion!)!,
+                targetDatabaseEngineEdition: Generator.targetDatabaseEngineEditionMap.get(serverInfo.engineEditionId!)!,
                 targetDatabaseEngineType: serverInfo.isCloud ? 'SqlAzure' : 'SingleInstance'
             }
         );

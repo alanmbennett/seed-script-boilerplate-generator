@@ -4,34 +4,34 @@ import * as azdata from 'azdata';
 import { ColumnFetcher } from './columnFetcher';
 import { Generator } from './generator';
 import { QueryDocumentStrategy } from './queryDocumentStrategy';
+import { Configuration } from './configuration';
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(
         'seed-script-boilerplate-generator.generate', 
         async (objectExplorerContext: azdata.ObjectExplorerContext) => {
-            try{
+            try {
+                const configuration = new Configuration();
+
                 const tableName = `${objectExplorerContext.nodeInfo!.metadata!.schema!}.${objectExplorerContext.nodeInfo!.metadata!.name}`;
                 vscode.window.showInformationMessage(`Generating seed script boilerplate for ${tableName}...`);
 
                 const connectionUri = await azdata.connection.getUriForConnection(objectExplorerContext.connectionProfile!.id)
     
                 const columns = await (new ColumnFetcher(objectExplorerContext, connectionUri)).getColumns();
-                if(columns.length === 0)
-                {
+                if(columns.length === 0) {
                     vscode.window.showErrorMessage(`No valid columns found for ${tableName}.`);
                     return;
                 }
     
-                const generator = new Generator(objectExplorerContext, connectionUri, columns);
+                const generator = new Generator(objectExplorerContext, connectionUri, configuration, columns);
                 const scripts = await generator.generateScripts();
 
                 const currentConnection = await azdata.connection.getCurrentConnection();
                 await new QueryDocumentStrategy(scripts, currentConnection).openDocument();
     
                 vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${tableName}!`);
-            }
-            catch (error)
-            {
+            } catch (error) {
                 vscode.window.showErrorMessage(`Failed to generate seed script boilerplate: ${error}`);
             }
         }
