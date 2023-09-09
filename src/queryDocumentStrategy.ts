@@ -4,9 +4,10 @@ import { GeneratedScripts } from "./generator";
 
 export class QueryDocumentStrategy
 {
-    private scripts : GeneratedScripts;
-    private connectionProfile : azdata.connection.ConnectionProfile;
-    private providerID = 'MSSQL';
+    private readonly scripts : GeneratedScripts;
+    private readonly connectionProfile: azdata.connection.ConnectionProfile;
+    
+    private static readonly providerID = 'MSSQL';
 
     constructor(scripts : GeneratedScripts, connectionProfile : azdata.connection.ConnectionProfile) {
         this.scripts = scripts;
@@ -16,7 +17,7 @@ export class QueryDocumentStrategy
     public async openDocument() {
         await azdata.queryeditor.openQueryDocument(
             { content: this.scripts.seedScriptHelperSql },
-            this.providerID
+            QueryDocumentStrategy.providerID
         )
             .then(document => {
                 document.connect(this.connectionProfile);

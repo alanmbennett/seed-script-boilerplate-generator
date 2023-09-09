@@ -1,6 +1,6 @@
 {
 	"name": "seed-script-boilerplate-generator",
-	"displayName": "seed-script-boilerplate-generator",
+	"displayName": "Seed Script Boilerplate Generator",
 	"description": "Generates boilerplate for seed scripts using a SQL Server table selected from the Object Explorer.",
 	"publisher": "alanmbennett",
 	"version": "0.0.1",
@@ -30,7 +30,30 @@
 					"when": "connectionProvider == 'MSSQL' && nodeType == 'Table'"
 				}
 			]
-		}
+		},
+		"configuration":[
+			{
+				"type": "object",
+				"title": "Seed Script Boilerplate Generator configuration",
+				"properties": {
+					"seed-script-boilerplate-generator.enableColumnLabels": {
+						"type": "boolean",
+						"default": true,
+						"description": "Should comments containg column labels be generated for each column in the SELECT query script?"
+					},
+					"seed-script-boilerplate-generator.useTabs": {
+						"type": "boolean",
+						"default": false,
+						"description": "Should tab characters be used instead of whitespace for indents?"
+					},
+					"seed-script-boilerplate-generator.indentSpaces": {
+						"type": "number",
+						"default": 4,
+						"description": "Number of spaces to use when indenting. This is ignored when tab indents are enabled."
+					}
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
