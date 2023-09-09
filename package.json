@@ -12,21 +12,25 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:seed-script-boilerplate-generator.helloWorld",
-		"onCommand:seed-script-boilerplate-generator.showCurrentConnection"
+		"onCommand:seed-script-boilerplate-generator.generate"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "seed-script-boilerplate-generator.helloWorld",
-				"title": "Hello World"
-			},
-			{
-				"command": "seed-script-boilerplate-generator.showCurrentConnection",
-				"title": "Show Current Connection"
+				"command": "seed-script-boilerplate-generator.generate",
+				"title": "Generate Seed Script Boilerplate"
 			}
-		]
+		],
+		"menus": {
+			"objectExplorer/item/context": [
+				{
+					"command": "seed-script-boilerplate-generator.generate",
+					"group": "seed-script-boilerplate-generator",
+					"when": "connectionProvider == 'MSSQL' && nodeType == 'Table'"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
