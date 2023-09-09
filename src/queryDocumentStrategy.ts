@@ -22,6 +22,7 @@ export class QueryDocumentStrategy
                 document.connect(this.connectionProfile);
             });
         
-        await vscode.workspace.openTextDocument({ language: 'sql', content: this.scripts.insertQuerySql });
+        const insertDocument = await vscode.workspace.openTextDocument({ language: 'sql', content: this.scripts.insertQuerySql });
+        await vscode.window.showTextDocument(insertDocument, vscode.ViewColumn.Beside, true);
     }
 }
