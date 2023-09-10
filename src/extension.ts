@@ -12,23 +12,27 @@ export function activate(context: vscode.ExtensionContext) {
         'seed-script-boilerplate-generator.generate', 
         async (objectExplorerContext: azdata.ObjectExplorerContext) => {
             try {
-                vscode.window.showInformationMessage(`Generating seed script boilerplate...`);
-
-                const connectionContext = await ConnectionContext.createFromContext(objectExplorerContext);
+                let connectionContext;
+                await vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Generating seed script boilerplate...'
+                }, async () => {
+                    connectionContext = await ConnectionContext.createFromContext(objectExplorerContext);
     
-                const columns = await (new ColumnFetcher(connectionContext)).getColumns();
-                if(columns.length === 0) {
-                    vscode.window.showErrorMessage(`No valid columns found for ${connectionContext.fullTableName}.`);
-                    return;
-                }
+                    const columns = await (new ColumnFetcher(connectionContext)).getColumns();
+                    if (columns.length === 0) {
+                        vscode.window.showErrorMessage(`No valid columns found for ${connectionContext.fullTableName}.`);
+                        return;
+                    }
+        
+                    const configuration = new Configuration();
+                    const generator = new Generator(connectionContext, configuration, columns);
+                    const scripts = await generator.generateScripts();
     
-                const configuration = new Configuration();
-                const generator = new Generator(connectionContext, configuration, columns);
-                const scripts = await generator.generateScripts();
-
-                await new QueryDocumentStrategy(scripts, connectionContext.currentConnection).openDocument();
+                    await new QueryDocumentStrategy(scripts, connectionContext.currentConnection).openDocument();
+                });
     
-                vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${connectionContext.fullTableName}!`);
+                vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${connectionContext!.fullTableName}!`);
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to generate seed script boilerplate: ${error}`);
             }
