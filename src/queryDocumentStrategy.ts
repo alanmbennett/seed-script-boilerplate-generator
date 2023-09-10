@@ -6,8 +6,6 @@ export class QueryDocumentStrategy
 {
     private readonly scripts : GeneratedScripts;
     private readonly connectionProfile: azdata.connection.ConnectionProfile;
-    
-    private static readonly providerID = 'MSSQL';
 
     constructor(scripts : GeneratedScripts, connectionProfile : azdata.connection.ConnectionProfile) {
         this.scripts = scripts;
@@ -17,7 +15,7 @@ export class QueryDocumentStrategy
     public async openDocument() {
         await azdata.queryeditor.openQueryDocument(
             { content: this.scripts.seedScriptHelperSql },
-            QueryDocumentStrategy.providerID
+            this.connectionProfile.providerId
         )
             .then(document => {
                 document.connect(this.connectionProfile);

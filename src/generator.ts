@@ -23,28 +23,6 @@ export class Generator {
         'geometry'
     ];
 
-    private static readonly scriptCompatibilityOptionMap = new Map<number, string>([
-        [90, 'Script90Compat'],
-        [100, 'Script100Compat'],
-        [105, 'Script105Compat'],
-        [110, 'Script110Compat'],
-        [120, 'Script120Compat'],
-        [130, 'Script130Compat'],
-        [140, 'Script140Compat']
-    ]);
-
-    private static readonly targetDatabaseEngineEditionMap = new Map<number, string>([
-        [0, 'SqlServerEnterpriseEdition'],
-        [1, 'SqlServerPersonalEdition'],
-        [2, 'SqlServerStandardEdition'],
-        [3, 'SqlServerEnterpriseEdition'],
-        [4, 'SqlServerExpressEdition'],
-        [5, 'SqlAzureDatabaseEdition'],
-        [6, 'SqlDatawarehouseEdition'],
-        [7, 'SqlServerStretchEdition'],
-        [11, 'SqlServerOnDemandEdition'],
-    ]);
-
     constructor(
         context : ConnectionContext, 
         configuration: Configuration,
@@ -136,17 +114,18 @@ export class Generator {
     }
 
     private async isIdentityByScanningCreateTableScript() {
-        const scriptProvider = azdata.dataprotocol.getProvidersByType<azdata.ScriptingProvider>(azdata.DataProviderType.ScriptingProvider)[0];
-        const serverInfo = await azdata.connection.getServerInfo(this.context.connectionProfile.id);
-
+        const scriptProvider = azdata.dataprotocol.getProvider<azdata.ScriptingProvider>(
+            this.context.currentConnection.providerId,
+            azdata.DataProviderType.ScriptingProvider
+        );
         const scriptResult = await scriptProvider.scriptAsOperation(
             this.context.connectionUri, 
             azdata.ScriptOperation.Create, 
             this.context.tableMetadata,
             {
-                scriptCompatibilityOption: Generator.scriptCompatibilityOptionMap.get(serverInfo.serverMajorVersion!)!,
-                targetDatabaseEngineEdition: Generator.targetDatabaseEngineEditionMap.get(serverInfo.engineEditionId!)!,
-                targetDatabaseEngineType: serverInfo.isCloud ? 'SqlAzure' : 'SingleInstance'
+                scriptCompatibilityOption: '',
+                targetDatabaseEngineEdition: '',
+                targetDatabaseEngineType: ''
             }
         );
 

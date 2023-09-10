@@ -44,14 +44,14 @@ export class ColumnFetcher {
             .filter(column => !column.unsanitizedAttributes.includes('Computed'));
     }
 
-    private async getColumnMetadata() : Promise<azdata.ColumnMetadata[]> {
-        const metadataProvider = azdata.dataprotocol.getProvidersByType<azdata.MetadataProvider>(azdata.DataProviderType.MetadataProvider);
-        return await metadataProvider[0].getTableInfo(this.context.connectionUri, this.context.tableMetadata);
+    private async getColumnMetadata(): Promise<azdata.ColumnMetadata[]> {
+        const metadataProvider = azdata.dataprotocol.getProvider<azdata.MetadataProvider>(this.context.currentConnection.providerId, azdata.DataProviderType.MetadataProvider);
+        return await metadataProvider.getTableInfo(this.context.connectionUri, this.context.tableMetadata);
     }
 
     private async getColumnNodes() : Promise<azdata.objectexplorer.ObjectExplorerNode[]> {
         const nodes = await azdata.objectexplorer.findNodes(
-            this.context.objectExplorerConnectionProfile.id, 
+            this.context.objectExplorerConnection.id, 
             this.context.nodeType,
             this.context.schema,
             this.context.tableName,

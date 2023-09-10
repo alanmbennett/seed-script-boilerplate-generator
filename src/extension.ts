@@ -26,8 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const generator = new Generator(connectionContext, configuration, columns);
                 const scripts = await generator.generateScripts();
 
-                const currentConnection = await connectionContext.getConnectionProfile();
-                await new QueryDocumentStrategy(scripts, currentConnection).openDocument();
+                await new QueryDocumentStrategy(scripts, connectionContext.currentConnection).openDocument();
     
                 vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${connectionContext.fullTableName}!`);
             } catch (error) {
