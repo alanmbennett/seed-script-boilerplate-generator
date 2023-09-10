@@ -1,12 +1,11 @@
 import * as azdata from 'azdata';
+import ConnectionContext from './connectionContext';
 
 export class ColumnFetcher {
-    private readonly context : azdata.ObjectExplorerContext;
-    private readonly connectionUri: string;
+    private readonly context : ConnectionContext;
 
-    constructor(context : azdata.ObjectExplorerContext, connectionUri: string) {
+    constructor(context : ConnectionContext) {
         this.context = context;
-        this.connectionUri = connectionUri;
     }
 
     public async getColumns() : Promise<Column[]> {
@@ -46,17 +45,17 @@ export class ColumnFetcher {
     }
 
     private async getColumnMetadata() : Promise<azdata.ColumnMetadata[]> {
-        const metadataProvider = azdata.dataprotocol.getProvidersByType<azdata.MetadataProvider>(azdata.DataProviderType.MetadataProvider)[0];
-        return await metadataProvider.getTableInfo(this.connectionUri, this.context.nodeInfo!.metadata!);
+        const metadataProvider = azdata.dataprotocol.getProvidersByType<azdata.MetadataProvider>(azdata.DataProviderType.MetadataProvider);
+        return await metadataProvider[0].getTableInfo(this.context.connectionUri, this.context.tableMetadata);
     }
 
     private async getColumnNodes() : Promise<azdata.objectexplorer.ObjectExplorerNode[]> {
         const nodes = await azdata.objectexplorer.findNodes(
-            this.context.connectionProfile!.id, 
-            this.context.nodeInfo!.nodeType,
-            this.context.nodeInfo!.metadata!.schema!,
-            this.context.nodeInfo!.metadata!.name,
-            String(this.context.connectionProfile!.databaseName),
+            this.context.connectionProfile.id, 
+            this.context.nodeType,
+            this.context.schema,
+            this.context.tableName,
+            this.context.databaseName,
             []
         );
 

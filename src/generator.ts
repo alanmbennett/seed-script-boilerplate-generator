@@ -1,13 +1,12 @@
 import * as azdata from 'azdata';
 import { Column } from './columnFetcher';
 import { Configuration } from './configuration';
+import ConnectionContext from './connectionContext';
 
 export class Generator {
-    private readonly context : azdata.ObjectExplorerContext;
-    private readonly connectionUri: string;
+    private readonly context : ConnectionContext;
     private readonly configuration: Configuration;
     private readonly columns: Column[];
-    private readonly escapedTableName: string;
 
     private readonly indent;
     private readonly newline = '\n';
@@ -47,17 +46,14 @@ export class Generator {
     ]);
 
     constructor(
-        context : azdata.ObjectExplorerContext, 
-        connectionUri: string, 
+        context : ConnectionContext, 
         configuration: Configuration,
         columns : Column[]
     ) {
         this.context = context;
-        this.connectionUri = connectionUri;
         this.columns = columns;
         this.configuration = configuration;
         this.indent = this.configuration.indent;
-        this.escapedTableName = `[${this.context.nodeInfo!.metadata!.schema!}].[${this.context.nodeInfo!.metadata!.name}]`;
     }
 
     public async generateScripts() : Promise<GeneratedScripts> {
@@ -67,7 +63,7 @@ export class Generator {
         ];
 
         let insertQueryBuilder = [
-            `INSERT INTO ${this.escapedTableName}`,
+            `INSERT INTO ${this.context.escapedFullTableName}`,
             '('
         ];
 
@@ -92,7 +88,7 @@ export class Generator {
         );
 
         if(needsIdentityInsert || await this.isIdentityByScanningCreateTableScript()) {
-            const identityInsert = `SET IDENTITY_INSERT ${this.escapedTableName}`;
+            const identityInsert = `SET IDENTITY_INSERT ${this.context.escapedFullTableName}`;
             insertQueryBuilder.push('', `${identityInsert} OFF;`);
 
             insertQueryBuilder = [`${identityInsert} ON;`, ''].concat(insertQueryBuilder);
@@ -102,7 +98,7 @@ export class Generator {
             `${this.indent}+ '), '`,
             ", '''NULL'''",
             ", 'NULL')",
-            `FROM ${this.escapedTableName};`
+            `FROM ${this.context.escapedFullTableName};`
         );
 
         return {
@@ -141,12 +137,12 @@ export class Generator {
 
     private async isIdentityByScanningCreateTableScript() {
         const scriptProvider = azdata.dataprotocol.getProvidersByType<azdata.ScriptingProvider>(azdata.DataProviderType.ScriptingProvider)[0];
-        const serverInfo = await azdata.connection.getServerInfo(this.context.connectionProfile!.id);
+        const serverInfo = await azdata.connection.getServerInfo(this.context.connectionProfile.id);
 
         const scriptResult = await scriptProvider.scriptAsOperation(
-            this.connectionUri, 
+            this.context.connectionUri, 
             azdata.ScriptOperation.Create, 
-            this.context.nodeInfo!.metadata!,
+            this.context.tableMetadata,
             {
                 scriptCompatibilityOption: Generator.scriptCompatibilityOptionMap.get(serverInfo.serverMajorVersion!)!,
                 targetDatabaseEngineEdition: Generator.targetDatabaseEngineEditionMap.get(serverInfo.engineEditionId!)!,

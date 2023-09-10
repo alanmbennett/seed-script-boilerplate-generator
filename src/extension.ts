@@ -5,32 +5,32 @@ import { ColumnFetcher } from './columnFetcher';
 import { Generator } from './generator';
 import { QueryDocumentStrategy } from './queryDocumentStrategy';
 import { Configuration } from './configuration';
+import ConnectionContext from './connectionContext';
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(
         'seed-script-boilerplate-generator.generate', 
         async (objectExplorerContext: azdata.ObjectExplorerContext) => {
             try {
-                const configuration = new Configuration();
+                vscode.window.showInformationMessage(`Generating seed script boilerplate...`);
 
-                const tableName = `${objectExplorerContext.nodeInfo!.metadata!.schema!}.${objectExplorerContext.nodeInfo!.metadata!.name}`;
-                vscode.window.showInformationMessage(`Generating seed script boilerplate for ${tableName}...`);
-
-                const connectionUri = await azdata.connection.getUriForConnection(objectExplorerContext.connectionProfile!.id)
+                const connectionUri = await azdata.connection.getUriForConnection(objectExplorerContext.connectionProfile!.id);
+                const connectionContext = new ConnectionContext(objectExplorerContext, connectionUri);
     
-                const columns = await (new ColumnFetcher(objectExplorerContext, connectionUri)).getColumns();
+                const columns = await (new ColumnFetcher(connectionContext)).getColumns();
                 if(columns.length === 0) {
-                    vscode.window.showErrorMessage(`No valid columns found for ${tableName}.`);
+                    vscode.window.showErrorMessage(`No valid columns found for ${connectionContext.fullTableName}.`);
                     return;
                 }
     
-                const generator = new Generator(objectExplorerContext, connectionUri, configuration, columns);
+                const configuration = new Configuration();
+                const generator = new Generator(connectionContext, configuration, columns);
                 const scripts = await generator.generateScripts();
 
                 const currentConnection = await azdata.connection.getCurrentConnection();
                 await new QueryDocumentStrategy(scripts, currentConnection).openDocument();
     
-                vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${tableName}!`);
+                vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${connectionContext.fullTableName}!`);
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to generate seed script boilerplate: ${error}`);
             }
