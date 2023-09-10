@@ -8,4 +8,5 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Initial release
 
-## v1.0.0
+## v0.1.0
+- Initial pre-release
