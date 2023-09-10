@@ -20,7 +20,8 @@ export class Generator {
         'float',
         'real',
         'money',
-        'geography'
+        'geography',
+        'geometry'
     ];
 
     private static readonly scriptCompatibilityOptionMap = new Map<number, string>([
@@ -129,7 +130,7 @@ export class Generator {
         
         if (this.includesDataType(column.unsanitizedAttributes, Generator.numericTypes)) {
             isNullArguments = `CONVERT(VARCHAR, ${column.metadata.escapedName}), 'NULL'`;
-        } else if (this.includesDataType(column.unsanitizedAttributes, ["date"])) {
+        } else if (this.includesDataType(column.unsanitizedAttributes, ["date", "time"])) {
             isNullArguments = `'''' + CONVERT(VARCHAR, ${column.metadata.escapedName}) + '''', 'NULL'`;
         } else {
             isNullArguments = `'''' + CONVERT(VARCHAR(MAX), REPLACE(${column.metadata.escapedName}, '''', '''''')) + '''', 'NULL'`;
