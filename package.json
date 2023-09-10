@@ -11,6 +11,10 @@
 	"categories": [
 		"Other"
 	],
+	"repository": {
+        "type": "git",
+        "url": "https://github.com/alanmbennett/seed-script-boilerplate-generator.git"
+    },
 	"activationEvents": [
 		"onCommand:seed-script-boilerplate-generator.generate"
 	],
