@@ -14,8 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 vscode.window.showInformationMessage(`Generating seed script boilerplate...`);
 
-                const connectionUri = await azdata.connection.getUriForConnection(objectExplorerContext.connectionProfile!.id);
-                const connectionContext = new ConnectionContext(objectExplorerContext, connectionUri);
+                const connectionContext = await ConnectionContext.createFromContext(objectExplorerContext);
     
                 const columns = await (new ColumnFetcher(connectionContext)).getColumns();
                 if(columns.length === 0) {
@@ -27,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const generator = new Generator(connectionContext, configuration, columns);
                 const scripts = await generator.generateScripts();
 
-                const currentConnection = await azdata.connection.getCurrentConnection();
+                const currentConnection = await connectionContext.getConnectionProfile();
                 await new QueryDocumentStrategy(scripts, currentConnection).openDocument();
     
                 vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${connectionContext.fullTableName}!`);

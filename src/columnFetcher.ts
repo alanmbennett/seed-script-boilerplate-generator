@@ -51,7 +51,7 @@ export class ColumnFetcher {
 
     private async getColumnNodes() : Promise<azdata.objectexplorer.ObjectExplorerNode[]> {
         const nodes = await azdata.objectexplorer.findNodes(
-            this.context.connectionProfile.id, 
+            this.context.objectExplorerConnectionProfile.id, 
             this.context.nodeType,
             this.context.schema,
             this.context.tableName,
