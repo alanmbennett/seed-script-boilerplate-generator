@@ -7,8 +7,6 @@ export default class ConnectionContext {
     public readonly schema: string;
     public readonly tableName: string;
     public readonly databaseName: string;
-    public readonly fullTableName: string;
-    public readonly escapedFullTableName: string;
     public readonly objectExplorerConnection: IConnectionProfile;
     public readonly tableMetadata: ObjectMetadata;
     public readonly connectionUri: string;
@@ -25,10 +23,6 @@ export default class ConnectionContext {
 
         this.schema = nodeInfo.metadata!.schema!;
         this.tableName = nodeInfo.metadata!.name;
-
-        // TODO: Look into moving this
-        this.fullTableName = `${this.schema}.${this.tableName}`;
-        this.escapedFullTableName = `[${this.schema}].[${this.tableName}]`;
 
         this.objectExplorerConnection = objectExplorerConnection;
         this.databaseName = this.objectExplorerConnection.databaseName!;

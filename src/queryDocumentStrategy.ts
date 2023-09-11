@@ -1,6 +1,6 @@
 import * as azdata from 'azdata';
 import * as vscode from 'vscode';
-import { GeneratedScripts } from "./generator";
+import { GeneratedScripts } from "./integrations/generator";
 
 export class QueryDocumentStrategy
 {
