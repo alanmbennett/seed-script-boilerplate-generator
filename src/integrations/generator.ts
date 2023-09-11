@@ -1,4 +1,3 @@
-import * as azdata from 'azdata';
 import { Column } from './columnFetcher';
 import { Configuration } from '../configuration';
 import ConnectionContext from '../connectionContext';
@@ -43,24 +42,6 @@ export abstract class Generator {
     protected abstract onColumnInsert(seedScriptHelperBuilder: string[], insertQueryBuilder: string[], column: Column, isLastColumn: boolean): void;
 
     protected abstract afterColumnInserts(seedScriptHelperBuilder: string[], insertQueryBuilder: string[]): Promise<void>;
-
-    protected async generateCreateScript() {
-        const scriptProvider = azdata.dataprotocol.getProvider<azdata.ScriptingProvider>(
-            this.context.currentConnection.providerId,
-            azdata.DataProviderType.ScriptingProvider
-        );
-
-        return await scriptProvider.scriptAsOperation(
-            this.context.connectionUri, 
-            azdata.ScriptOperation.Create, 
-            this.context.tableMetadata,
-            {
-                scriptCompatibilityOption: '',
-                targetDatabaseEngineEdition: '',
-                targetDatabaseEngineType: ''
-            }
-        );
-    }
 }
 
 export type GeneratedScripts = {

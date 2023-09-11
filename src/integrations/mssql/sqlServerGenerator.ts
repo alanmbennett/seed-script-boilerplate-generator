@@ -2,6 +2,7 @@ import { Configuration } from "../../configuration";
 import ConnectionContext from "../../connectionContext";
 import { Generator } from "../generator";
 import { Column } from "../columnFetcher";
+import ScriptProvider from "../../scriptProvider";
 
 export default class SqlServerGenerator extends Generator {
     private needsIdentityInsert = false;
@@ -105,7 +106,7 @@ export default class SqlServerGenerator extends Generator {
     }
 
     private async isIdentityByScanningCreateTableScript() {
-        const scriptResult = await this.generateCreateScript();
+        const scriptResult = await ScriptProvider.generateCreateScript(this.context);
         const identityRegex = /IDENTITY(\(\d,\s?\d+\))?/g;
         return identityRegex.test(scriptResult.script);
     }
