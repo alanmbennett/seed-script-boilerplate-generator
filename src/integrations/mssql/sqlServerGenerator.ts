@@ -61,12 +61,11 @@ export default class SqlServerGenerator extends Generator {
             'VALUES',
             '/* Paste output from SELECT query here */'
         );
-
+        
         if(this.needsIdentityInsert || await this.isIdentityByScanningCreateTableScript()) {
             const identityInsert = `SET IDENTITY_INSERT ${this.escapedTableName}`;
+            insertQueryBuilder.unshift(`${identityInsert} ON;`, '');
             insertQueryBuilder.push('', `${identityInsert} OFF;`);
-
-            insertQueryBuilder = [`${identityInsert} ON;`, ''].concat(insertQueryBuilder);
         }
 
         seedScriptHelperBuilder.push(
