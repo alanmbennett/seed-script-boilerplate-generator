@@ -88,6 +88,8 @@ export default class SqlServerGenerator extends Generator {
             isNullArguments = `CONVERT(VARCHAR, ${column.escapedName}), 'NULL'`;
         } else if (this.includesDataType(column.objectExplorerLabel, ["date", "time"])) {
             isNullArguments = `'''' + CONVERT(VARCHAR, ${column.escapedName}) + '''', 'NULL'`;
+        } else if (this.includesDataType(column.unsanitizedAttributes, ["text"])) {
+            isNullArguments = `'''' + REPLACE(CONVERT(VARCHAR(MAX), ${column.metadata.escapedName}), '''', '''''') + '''', 'NULL'`;
         } else {
             isNullArguments = `'''' + CONVERT(VARCHAR(MAX), REPLACE(${column.escapedName}, '''', '''''')) + '''', 'NULL'`;
         }  
