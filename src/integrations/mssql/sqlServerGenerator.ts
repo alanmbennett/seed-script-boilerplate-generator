@@ -47,6 +47,10 @@ export default class SqlServerGenerator extends Generator {
         column: Column,
         isLastColumn: boolean
     ): void {
+        if (this.includesDataType(column.objectExplorerLabel, ['timestamp', 'rowversion'])) {
+            return;
+        }
+
         if(!this.needsIdentityInsert && column.isIdentity) {
             this.needsIdentityInsert = true;
         }
@@ -64,9 +68,8 @@ export default class SqlServerGenerator extends Generator {
 
         if(this.needsIdentityInsert || await this.isIdentityByScanningCreateTableScript()) {
             const identityInsert = `SET IDENTITY_INSERT ${this.escapedTableName}`;
+            insertQueryBuilder.unshift(`${identityInsert} ON;`, '');
             insertQueryBuilder.push('', `${identityInsert} OFF;`);
-
-            insertQueryBuilder = [`${identityInsert} ON;`, ''].concat(insertQueryBuilder);
         }
 
         seedScriptHelperBuilder.push(
@@ -77,24 +80,30 @@ export default class SqlServerGenerator extends Generator {
         );
     }
 
-    private buildColumnLine(column : Column, isLastColumn : boolean) : string {
+    private buildColumnLine(column: Column, isLastColumn: boolean): string {
         const columnLabel = this.configuration.enableColumnLabels
             ? `'/* ${column.escapedName} */ ' + `
             : '';
         
-        let isNullArguments = '';
+        let firstIsNullArgument = '';
         
         if (this.includesDataType(column.objectExplorerLabel, SqlServerGenerator.numericTypes)) {
-            isNullArguments = `CONVERT(VARCHAR, ${column.escapedName}), 'NULL'`;
-        } else if (this.includesDataType(column.objectExplorerLabel, ["date", "time"])) {
-            isNullArguments = `'''' + CONVERT(VARCHAR, ${column.escapedName}) + '''', 'NULL'`;
-        } else if (this.includesDataType(column.objectExplorerLabel, ["text"])) {
-            isNullArguments = `'''' + REPLACE(CONVERT(VARCHAR(MAX), ${column.escapedName}), '''', '''''') + '''', 'NULL'`;
+            firstIsNullArgument = `CONVERT(VARCHAR(MAX), ${column.escapedName})`;
+        } else if (this.includesDataType(column.objectExplorerLabel, ['date', 'time'])) {
+            firstIsNullArgument = `'''' + CONVERT(VARCHAR(MAX), ${column.escapedName}) + ''''`;
+        } else if (this.includesDataType(column.objectExplorerLabel, ['text'])) {
+            firstIsNullArgument = `'''' + REPLACE(CONVERT(VARCHAR(MAX), ${column.escapedName}), '''', '''''') + ''''`;
+        } else if (this.includesDataType(column.objectExplorerLabel, ['binary'])) {
+            firstIsNullArgument = `CONVERT(VARCHAR(MAX), ${column.escapedName}, 1)`;
+        } else if (this.includesDataType(column.objectExplorerLabel, ['image'])) {
+            firstIsNullArgument = `CAST(CAST(${column.escapedName} AS VARBINARY(MAX)) AS VARCHAR(MAX))`;
+        } else if (this.includesDataType(column.objectExplorerLabel, ['hierarchyid'])) {
+            firstIsNullArgument = `'CAST(''' + CONVERT(VARCHAR(MAX), ${column.escapedName}) + ''' AS HIERARCHYID)'`;
         } else {
-            isNullArguments = `'''' + CONVERT(VARCHAR(MAX), REPLACE(${column.escapedName}, '''', '''''')) + '''', 'NULL'`;
+            firstIsNullArgument = `'''' + CONVERT(VARCHAR(MAX), REPLACE(${column.escapedName}, '''', '''''')) + ''''`;
         }  
 
-        return `${columnLabel}ISNULL(${isNullArguments})${isLastColumn ? '' : " + ', '"}`;
+        return `${columnLabel}ISNULL(${firstIsNullArgument}, 'NULL')${isLastColumn ? '' : " + ', '"}`;
     }
 
     private includesDataType(attributes: string, dataTypes: string[]) {
