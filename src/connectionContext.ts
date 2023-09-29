@@ -2,62 +2,64 @@ import * as azdata from 'azdata';
 import { IConnectionProfile, ObjectExplorerContext, ObjectMetadata } from "azdata";
 
 export default class ConnectionContext {
+    public currentConnection: azdata.connection.ConnectionProfile;
     public readonly nodeType: string;
     public readonly schema: string;
     public readonly tableName: string;
     public readonly databaseName: string;
-    public readonly fullTableName: string;
-    public readonly escapedFullTableName: string;
-    public readonly objectExplorerConnectionProfile: IConnectionProfile;
-    public readonly connectionProfile: IConnectionProfile;
+    public readonly objectExplorerConnection: IConnectionProfile;
     public readonly tableMetadata: ObjectMetadata;
     public readonly connectionUri: string;
 
     constructor(
         context: ObjectExplorerContext,
-        objectExplorerConnectionProfile: IConnectionProfile,
-        connectionProfile: IConnectionProfile,
+        currentConnection: azdata.connection.ConnectionProfile,
+        objectExplorerConnection: IConnectionProfile,
         connectionUri: string
     ) {
+        this.currentConnection = currentConnection;
+
         const nodeInfo = context.nodeInfo!;
 
         this.schema = nodeInfo.metadata!.schema!;
         this.tableName = nodeInfo.metadata!.name;
-        this.fullTableName = `${this.schema}.${this.tableName}`;
-        this.escapedFullTableName = `[${this.schema}].[${this.tableName}]`;
-        this.objectExplorerConnectionProfile = objectExplorerConnectionProfile;
-        this.connectionProfile = connectionProfile;
-        this.databaseName = this.objectExplorerConnectionProfile.databaseName!;
+
+        this.objectExplorerConnection = objectExplorerConnection;
+        this.databaseName = this.objectExplorerConnection.databaseName!;
+
         this.tableMetadata = nodeInfo.metadata!;
         this.nodeType = nodeInfo.nodeType;
         this.connectionUri = connectionUri;
     }
 
-    async getConnectionProfile(): Promise<azdata.connection.ConnectionProfile> {
-        return this.connectionProfile.id === this.objectExplorerConnectionProfile.id
-            ? await azdata.connection.getCurrentConnection()
-            : (await azdata.connection.getConnections())
-                .find(connection => connection.connectionId === this.connectionProfile.id)!;
-    }
-
     static async createFromContext(context: ObjectExplorerContext) {
-        const originalConnectionProfile = context.connectionProfile!;
-        let connectionProfile = originalConnectionProfile;
-        const databaseName = connectionProfile.databaseName!;
+        const objectExplorerConnection = context.connectionProfile!;
+        let newConnection = objectExplorerConnection;
+        const databaseName = newConnection.databaseName!;
         const databasePropertyName = "database";
 
-        if (connectionProfile.options[databasePropertyName] !== databaseName) {
-            connectionProfile = Object.assign({}, originalConnectionProfile);
-            connectionProfile.options = Object.assign({}, originalConnectionProfile.options);
-            connectionProfile.options[databasePropertyName] = databaseName;
-            connectionProfile.groupId = undefined;
-            connectionProfile.saveProfile = false;
+        if (newConnection.options[databasePropertyName] !== databaseName) {
+            newConnection = Object.assign({}, objectExplorerConnection);
+            newConnection.options = Object.assign({}, objectExplorerConnection.options);
+            newConnection.options[databasePropertyName] = databaseName;
+            newConnection.groupId = undefined;
+            newConnection.saveProfile = false;
 
-            const connectionResult = await azdata.connection.connect(connectionProfile, false, false);
-            connectionProfile.id = connectionResult.connectionId!;
+            const connectionResult = await azdata.connection.connect(newConnection, false, false);
+            newConnection.id = connectionResult.connectionId!;
         }
 
-        const connectionUri = await azdata.connection.getUriForConnection(connectionProfile.id);
-        return new ConnectionContext(context, originalConnectionProfile, connectionProfile, connectionUri);
+        const connectionUri = await azdata.connection.getUriForConnection(newConnection.id);
+        const currentConnection = newConnection.id === objectExplorerConnection.id
+            ? await azdata.connection.getCurrentConnection()
+            : (await azdata.connection.getConnections())
+                .find(connection => connection.connectionId === newConnection.id)!;
+
+        return new ConnectionContext(
+            context,
+            currentConnection,
+            objectExplorerConnection,
+            connectionUri
+        );
     }
 }

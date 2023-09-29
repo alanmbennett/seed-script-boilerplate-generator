@@ -1,35 +1,39 @@
 'use strict';
 import * as vscode from 'vscode';
 import * as azdata from 'azdata';
-import { ColumnFetcher } from './columnFetcher';
-import { Generator } from './generator';
 import { QueryDocumentStrategy } from './queryDocumentStrategy';
 import { Configuration } from './configuration';
 import ConnectionContext from './connectionContext';
+import ProviderStrategyFactory from './integrations/providerStrategyFactory';
+import ProviderStrategy from './integrations/providerStrategy';
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(
         'seed-script-boilerplate-generator.generate', 
         async (objectExplorerContext: azdata.ObjectExplorerContext) => {
             try {
-                vscode.window.showInformationMessage(`Generating seed script boilerplate...`);
-
-                const connectionContext = await ConnectionContext.createFromContext(objectExplorerContext);
+                let connectionContext: ConnectionContext;
+                let providerStrategy: ProviderStrategy;
+                
+                await vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Generating seed script boilerplate...'
+                }, async () => {
+                    connectionContext = await ConnectionContext.createFromContext(objectExplorerContext);
+                    const configuration = new Configuration();
+                    providerStrategy = ProviderStrategyFactory.create(connectionContext, configuration);
     
-                const columns = await (new ColumnFetcher(connectionContext)).getColumns();
-                if(columns.length === 0) {
-                    vscode.window.showErrorMessage(`No valid columns found for ${connectionContext.fullTableName}.`);
-                    return;
-                }
+                    const columns = await providerStrategy.columnFetcher.getColumns();
+                    if (columns.length === 0) {
+                        vscode.window.showErrorMessage(`No valid columns found for ${providerStrategy.displayTableName}.`);
+                        return;
+                    }
+        
+                    const scripts = await providerStrategy.generator.generateScripts(columns);
+                    await new QueryDocumentStrategy(scripts, connectionContext.currentConnection).openDocument();
+                });
     
-                const configuration = new Configuration();
-                const generator = new Generator(connectionContext, configuration, columns);
-                const scripts = await generator.generateScripts();
-
-                const currentConnection = await connectionContext.getConnectionProfile();
-                await new QueryDocumentStrategy(scripts, currentConnection).openDocument();
-    
-                vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${connectionContext.fullTableName}!`);
+                vscode.window.showInformationMessage(`Successfully generated seed script boilerplate for ${providerStrategy!.displayTableName}!`);
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to generate seed script boilerplate: ${error}`);
             }

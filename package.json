@@ -3,7 +3,7 @@
 	"displayName": "Seed Script Boilerplate Generator",
 	"description": "Generates boilerplate for seed scripts using a SQL Server table selected from the Object Explorer.",
 	"publisher": "alanmbennett",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"engines": {
 		"vscode": "^1.39.0",
 		"azdata": "*"
