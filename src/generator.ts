@@ -128,6 +128,8 @@ export class Generator {
             isNullArguments = `CONVERT(VARCHAR, ${column.metadata.escapedName}), 'NULL'`;
         } else if (this.includesDataType(column.unsanitizedAttributes, ["date", "time"])) {
             isNullArguments = `'''' + CONVERT(VARCHAR, ${column.metadata.escapedName}) + '''', 'NULL'`;
+        } else if (this.includesDataType(column.unsanitizedAttributes, ["text"])) {
+            isNullArguments = `'''' + REPLACE(CONVERT(VARCHAR(MAX), ${column.metadata.escapedName}), '''', '''''') + '''', 'NULL'`;
         } else {
             isNullArguments = `'''' + CONVERT(VARCHAR(MAX), REPLACE(${column.metadata.escapedName}, '''', '''''')) + '''', 'NULL'`;
         }  
