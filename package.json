@@ -12,9 +12,9 @@
 		"Other"
 	],
 	"repository": {
-        "type": "git",
-        "url": "https://github.com/alanmbennett/seed-script-boilerplate-generator.git"
-    },
+		"type": "git",
+		"url": "https://github.com/alanmbennett/seed-script-boilerplate-generator.git"
+	},
 	"activationEvents": [
 		"onCommand:seed-script-boilerplate-generator.generate"
 	],
@@ -35,7 +35,7 @@
 				}
 			]
 		},
-		"configuration":[
+		"configuration": [
 			{
 				"type": "object",
 				"title": "Seed Script Boilerplate Generator configuration",
@@ -69,17 +69,21 @@
 		"proposedapi": "node installTypings.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.39.0",
 		"@types/azdata": "*",
+		"@types/chai": "^4.3.6",
 		"@types/glob": "^7.1.4",
 		"@types/mocha": "^9.0.0",
 		"@types/node": "^13.11.0",
-		"eslint": "^6.8.0",
-		"@typescript-eslint/parser": "^2.30.0",
+		"@types/sinon": "^10.0.17",
+		"@types/vscode": "^1.39.0",
 		"@typescript-eslint/eslint-plugin": "^2.30.0",
+		"@typescript-eslint/parser": "^2.30.0",
+		"azdata-test": "^1.x",
+		"chai": "^4.3.10",
+		"eslint": "^6.8.0",
 		"glob": "^7.1.7",
 		"mocha": "^9.1.0",
-		"typescript": "^4.3.5",
-		"azdata-test": "^1.x"
+		"sinon": "^16.0.0",
+		"typescript": "^4.3.5"
 	}
 }
